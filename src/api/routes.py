@@ -4,6 +4,8 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 from flask import Flask, request, jsonify, url_for, Blueprint
 from api.models import db, User
 from api.utils import generate_sitemap, APIException
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
+
 
 api = Blueprint('api', __name__)
 
@@ -16,3 +18,42 @@ def handle_hello():
     }
 
     return jsonify(response_body), 200
+
+
+#User and userRegistration
+
+#@api.route('/user', methods=['GET'])
+#def get_users():
+#    users = User.query.all()
+#   data = [user.serialize() for user in users]
+    
+#   return jsonify(data), 200
+
+
+@api.route('/user', methods=['POST'])
+def create_user():
+    data = request.get_json()
+    user = User(name=data.get('name'), last_name=data.get('last_name'), email=data.get('email'), password=data.get('password'))
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({"message": "everything ok"}), 200
+
+
+    #Login
+@api.route('/login', methods=['POST'])
+def login():
+    data = request.json
+
+    user = User.query.filter_by(email=data['email'], password=data['password']).first()
+    if not user:
+        return jsonify({"message": "incorrect email or password"}), 400
+    access_token = create_access_token(identity=user.id)
+
+    return jsonify({"token": access_token, "user":user.serialize()}), 200
+
+ 
+@api.route('user/<int:id>', methods=['GET'])
+@jwt_required()
+def get_user(id):
+    user = User.query.get(id)
+    return jsonify(user.serialize())
