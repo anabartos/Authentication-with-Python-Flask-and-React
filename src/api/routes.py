@@ -33,7 +33,7 @@ def handle_hello():
 @api.route('/user', methods=['POST'])
 def create_user():
     data = request.get_json()
-    user = User(name=data.get('name'), last_name=data.get('last_name'), email=data.get('email'), password=data.get('password'))
+    user = User(email=data["email"], password=data["password"], name=data["name"], last_name=data["last_name"])
     db.session.add(user)
     db.session.commit()
     return jsonify({"message": "everything ok"}), 200
@@ -44,16 +44,22 @@ def create_user():
 def login():
     data = request.json
 
-    user = User.query.filter_by(email=data['email'], password=data['password']).first()
+    email = data.get("email")
+    name = data.get("name")
+    password = data.get("password")
+    last_name = data.get("last_name")
+
+
+    user = User.query.filter_by(email= email, password= password, name= name, last_name= last_name).first()
     if not user:
         return jsonify({"message": "incorrect email or password"}), 400
-    access_token = create_access_token(identity=user.id)
+    token = create_access_token(identity=user.id)
 
-    return jsonify({"token": access_token, "user":user.serialize()}), 200
+    return jsonify({"token": token, "user":user.serialize()}), 200
 
  
-@api.route('user/<int:id>', methods=['GET'])
+@api.route('/private', methods=['GET'])
 @jwt_required()
-def get_user(id):
-    user = User.query.get(id)
-    return jsonify(user.serialize())
+def private():
+    email=get_jwt_identity()
+    return jsonify({"user": email})

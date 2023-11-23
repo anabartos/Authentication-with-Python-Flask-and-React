@@ -62,7 +62,7 @@ const getState = ({
                         name: name,
                         last_name: last_name,
                     };
-                    let response = await fetch(process.env.BACKEND_URL + "api/user", {
+                    let response = await fetch(process.env.BACKEND_URL + "/api/user", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -72,13 +72,43 @@ const getState = ({
                     if (!response.ok) {
                         throw new Error("No se ha creado el usuario");
                     }
-                    const data = await response.json;
+                    const data = await response.json();
                     return true;
                 } catch (error) {
                     console.log("Error al crear usuario", error);
                     return false;
                 }
             },
+            loginUser: async(email, password, name, last_name) =>{
+                try{
+                    let response = await fetch(process.env.BACKEND_URL + "/api/login", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": "Bearer " + sessionStorage.getItem("token")
+                        },
+                        body: JSON.stringify({email:email, password:password, name:name, last_name:last_name}),
+                    });
+                    const data = await response.json()
+                    sessionStorage.setItem("token", data.token)
+                    
+                    return data
+
+
+                }catch(error){console.log(error)}
+
+            },
+            private: async() =>{
+                const token = sessionStorage.getItem("token")
+                const resp = await fetch(process.env.BACKEND_URL + "/api/private", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+            });
+
+            }
         },
     };
 };
